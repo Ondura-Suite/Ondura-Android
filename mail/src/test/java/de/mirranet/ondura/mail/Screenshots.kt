@@ -134,12 +134,12 @@ private object Sample {
         color = "#107c41",
     )
 
-    private fun folder(id: String, account: String, name: String, role: String, unread: Int = 0, parent: String? = null) =
-        Folder(id = id, accountId = account, remoteId = id, name = name, parentId = parent, role = role, unreadCount = unread, totalCount = unread + 40)
+    private fun folder(id: String, account: String, name: String, role: String, unread: Int = 0, parent: String? = null, total: Int = unread + 40) =
+        Folder(id = id, accountId = account, remoteId = id, name = name, parentId = parent, role = role, unreadCount = unread, totalCount = total)
 
     private val workFolders = listOf(
         FolderEntry(folder("inbox", "a1", "Inbox", FolderRole.INBOX, 4), 0),
-        FolderEntry(folder("drafts", "a1", "Drafts", FolderRole.DRAFTS), 0),
+        FolderEntry(folder("drafts", "a1", "Drafts", FolderRole.DRAFTS, total = 1), 0),
         FolderEntry(folder("sent", "a1", "Sent Items", FolderRole.SENT), 0),
         FolderEntry(folder("archive", "a1", "Archive", FolderRole.ARCHIVE), 0),
         FolderEntry(folder("junk", "a1", "Junk Email", FolderRole.JUNK), 0),
