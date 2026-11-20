@@ -134,7 +134,7 @@ private fun MailApp(launches: MutableStateFlow<LaunchRequest?>) {
     val nav = rememberNavController()
     val mail: MailViewModel = viewModel()
     val state by mail.state.collectAsStateWithLifecycle()
-    val launch by launches.collectAsStateWithLifecycle()
+    val pending by launches.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     // Android 13+: ask once for permission to show new-mail notifications.
@@ -156,8 +156,8 @@ private fun MailApp(launches: MutableStateFlow<LaunchRequest?>) {
         }
     }
 
-    LaunchedEffect(launch, state.loaded) {
-        val request = launch ?: return@LaunchedEffect
+    LaunchedEffect(pending, state.loaded) {
+        val request = pending ?: return@LaunchedEffect
         if (!state.loaded || state.accounts.isEmpty()) return@LaunchedEffect
         launches.value = null
         when (request) {

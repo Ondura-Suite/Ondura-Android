@@ -53,7 +53,8 @@ pipeline {
         stage('Rust bridge') {
             steps {
                 dir('rust') {
-                    sh 'cargo clippy -p ondura-mobile -- -D warnings'
+                    sh 'cargo clippy -p ondura-mobile --all-targets -- -D warnings'
+                    sh 'cargo test -p ondura-mobile'
                 }
             }
         }

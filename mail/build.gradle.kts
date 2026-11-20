@@ -15,6 +15,8 @@ val keystoreFile = System.getenv("ONDURA_KEYSTORE_FILE")?.let { file(it) }?.take
 android {
     namespace = "de.mirranet.ondura.mail"
     compileSdk = 35
+    // Same NDK as :core, so the native libraries get stripped when packaged.
+    ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "de.mirranet.ondura.mail"

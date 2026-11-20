@@ -46,7 +46,9 @@ jobs:
 
       - name: Rust bridge (clippy)
         working-directory: rust
-        run: cargo clippy -p ondura-mobile -- -D warnings
+        run: |
+          cargo clippy -p ondura-mobile --all-targets -- -D warnings
+          cargo test -p ondura-mobile
 
       - uses: gradle/actions/setup-gradle@v4
 
@@ -76,7 +78,11 @@ jobs:
           ONDURA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ONDURA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ONDURA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon :mail:assembleRelease -Pondura.versionName=${{ steps.version.outputs.name }}
+        run: |
+          if [ -z "$ONDURA_GRAPH_CLIENT_ID" ]; then
+            echo "::warning::Variable ONDURA_GRAPH_CLIENT_ID is not set – Microsoft 365 sign-in is disabled in this build."
+          fi
+          ./gradlew --no-daemon :mail:assembleRelease -Pondura.versionName=${{ steps.version.outputs.name }}
 
       - name: Collect APK
         run: |

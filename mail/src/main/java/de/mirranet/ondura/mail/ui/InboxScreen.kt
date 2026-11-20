@@ -31,7 +31,7 @@ import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Drafts
-import androidx.compose.material.icons.outlined.DriveFileMove
+import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Flag
@@ -652,7 +652,7 @@ private fun MessageActionsSheet(
                 }
                 SheetAction(Icons.Outlined.AccessTime, stringResource(R.string.snooze)) { snoozing = true }
                 SheetAction(Icons.Outlined.Archive, stringResource(R.string.archive_action)) { vm.archive(message); onDismiss() }
-                SheetAction(Icons.Outlined.DriveFileMove, stringResource(R.string.move)) { onDismiss(); onMove() }
+                SheetAction(Icons.AutoMirrored.Outlined.DriveFileMove, stringResource(R.string.move)) { onDismiss(); onMove() }
                 if (inInbox && focusedTab != null) {
                     SheetAction(Icons.Outlined.SwapVert, stringResource(if (focusedTab) R.string.move_to_other else R.string.move_to_focused)) {
                         vm.setFocused(message, !focusedTab); onDismiss()

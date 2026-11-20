@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import androidx.browser.customtabs.CustomTabsIntent
 
 object Browser {
@@ -12,6 +14,12 @@ object Browser {
      * screen so the user comes back to Ondura after signing in.
      */
     fun open(context: Context, url: String): Boolean {
+        // Called from a thread of the Rust core: start the activity on the main thread.
+        Handler(Looper.getMainLooper()).post { launch(context, url) }
+        return true
+    }
+
+    private fun launch(context: Context, url: String): Boolean {
         val activity: Activity? = (context.applicationContext as? OnduraMailApp)?.foregroundActivity
         return try {
             val intent = CustomTabsIntent.Builder().setShowTitle(true).build()

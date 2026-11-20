@@ -30,12 +30,12 @@ import androidx.compose.material.icons.automirrored.outlined.ReplyAll
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.DriveFileMove
+import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MarkEmailUnread
 import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Shortcut
+import androidx.compose.material.icons.automirrored.outlined.Shortcut
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.BottomAppBar
@@ -190,7 +190,7 @@ fun ReaderScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.move)) },
-                                leadingIcon = { Icon(Icons.Outlined.DriveFileMove, null) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, null) },
                                 onClick = { menu = false; moving = true },
                             )
                         }
@@ -213,7 +213,7 @@ fun ReaderScreen(
                             Text(stringResource(R.string.reply_all))
                         }
                         TextButton(onClick = { onForward(summary.id) }) {
-                            Icon(Icons.Outlined.Shortcut, null)
+                            Icon(Icons.AutoMirrored.Outlined.Shortcut, null)
                             Spacer(Modifier.width(6.dp))
                             Text(stringResource(R.string.forward))
                         }

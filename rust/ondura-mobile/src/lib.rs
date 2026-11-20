@@ -18,7 +18,7 @@ mod secrets;
 
 use std::time::Duration;
 
-pub use bridge::OnduraMail;
+pub use bridge::{EventListener, OnduraMail, UrlOpener};
 pub use secrets::SecretVault;
 
 /// Error returned to Kotlin. `Auth` means the account needs a new password or
