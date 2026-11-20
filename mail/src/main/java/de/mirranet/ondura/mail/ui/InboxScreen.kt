@@ -47,6 +47,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -106,6 +107,16 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
+/** What the message list can ask of its owner ([MailViewModel] in the app). */
+interface InboxActions {
+    fun select(view: MailView)
+    fun selectTab(focused: Boolean)
+    fun refresh()
+    fun loadMore()
+    fun archive(message: MessageSummary)
+    fun delete(message: MessageSummary)
+}
+
 @Composable
 fun InboxScreen(
     vm: MailViewModel,
@@ -117,8 +128,6 @@ fun InboxScreen(
     onAccountSettings: (String) -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
-    val drawer = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     var actionsFor by remember { mutableStateOf<MessageSummary?>(null) }
     var moveTarget by remember { mutableStateOf<MessageSummary?>(null) }
@@ -127,13 +136,64 @@ fun InboxScreen(
         vm.messages.collect { snackbar.showSnackbar(it) }
     }
 
+    InboxContent(
+        state = state,
+        actions = vm,
+        snackbar = snackbar,
+        onOpenMessage = onOpenMessage,
+        onLongPress = { actionsFor = it },
+        onCompose = onCompose,
+        onSearch = onSearch,
+        onSettings = onSettings,
+        onAddAccount = onAddAccount,
+        onAccountSettings = onAccountSettings,
+    )
+
+    actionsFor?.let { message ->
+        MessageActionsSheet(
+            message = message,
+            inInbox = state.focusedTab != null,
+            focusedTab = state.focusedTab,
+            onDismiss = { actionsFor = null },
+            vm = vm,
+            onMove = { moveTarget = message },
+        )
+    }
+    moveTarget?.let { message ->
+        FolderPickerDialog(
+            folders = state.folders[message.accountId].orEmpty().filter { it.folder.id != message.folderId },
+            onDismiss = { moveTarget = null },
+            onPick = { folder ->
+                moveTarget = null
+                vm.move(message, folder)
+            },
+        )
+    }
+}
+
+/** The main screen without its view model (also used for the screenshots). */
+@Composable
+fun InboxContent(
+    state: MailState,
+    actions: InboxActions,
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    drawer: DrawerState = rememberDrawerState(DrawerValue.Closed),
+    onOpenMessage: (MessageSummary, isDraft: Boolean) -> Unit = { _, _ -> },
+    onLongPress: (MessageSummary) -> Unit = {},
+    onCompose: () -> Unit = {},
+    onSearch: () -> Unit = {},
+    onSettings: () -> Unit = {},
+    onAddAccount: () -> Unit = {},
+    onAccountSettings: (String) -> Unit = {},
+) {
+    val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
         drawerState = drawer,
         drawerContent = {
             MailDrawer(
                 state = state,
                 onSelect = { view ->
-                    vm.select(view)
+                    actions.select(view)
                     scope.launch { drawer.close() }
                 },
                 onSettings = {
@@ -175,46 +235,25 @@ fun InboxScreen(
                     AuthBanner(account) { onAccountSettings(account.id) }
                 }
                 state.focusedTab?.let { focused ->
-                    FocusedSwitch(focused = focused, otherUnread = state.focusCounts.second, onSelect = vm::selectTab)
+                    FocusedSwitch(focused = focused, otherUnread = state.focusCounts.second, onSelect = actions::selectTab)
                 }
                 if (status?.syncing == true && state.messages.isEmpty()) {
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                 }
                 PullToRefreshBox(
                     isRefreshing = state.refreshing,
-                    onRefresh = vm::refresh,
+                    onRefresh = actions::refresh,
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     MessageList(
                         state = state,
                         onOpen = { m -> onOpenMessage(m, state.folder(m.folderId)?.role == FolderRole.DRAFTS) },
-                        onLongPress = { actionsFor = it },
-                        vm = vm,
+                        onLongPress = onLongPress,
+                        actions = actions,
                     )
                 }
             }
         }
-    }
-
-    actionsFor?.let { message ->
-        MessageActionsSheet(
-            message = message,
-            inInbox = state.focusedTab != null,
-            focusedTab = state.focusedTab,
-            onDismiss = { actionsFor = null },
-            vm = vm,
-            onMove = { moveTarget = message },
-        )
-    }
-    moveTarget?.let { message ->
-        FolderPickerDialog(
-            folders = state.folders[message.accountId].orEmpty().filter { it.folder.id != message.folderId },
-            onDismiss = { moveTarget = null },
-            onPick = { folder ->
-                moveTarget = null
-                vm.move(message, folder)
-            },
-        )
     }
 }
 
@@ -322,7 +361,7 @@ private fun MessageList(
     state: MailState,
     onOpen: (MessageSummary) -> Unit,
     onLongPress: (MessageSummary) -> Unit,
-    vm: MailViewModel,
+    actions: InboxActions,
 ) {
     val listState = rememberLazyListState()
     val nearEnd by remember {
@@ -332,7 +371,7 @@ private fun MessageList(
         }
     }
     LaunchedEffect(nearEnd, state.messages.size) {
-        if (nearEnd && state.messages.isNotEmpty()) vm.loadMore()
+        if (nearEnd && state.messages.isNotEmpty()) actions.loadMore()
     }
     LaunchedEffect(state.view, state.focusedTab) {
         listState.scrollToItem(0)
@@ -355,8 +394,8 @@ private fun MessageList(
         items(state.messages, key = { it.id }) { message ->
             SwipeableRow(
                 message = message,
-                onArchive = { vm.archive(message) },
-                onDelete = { vm.delete(message) },
+                onArchive = { actions.archive(message) },
+                onDelete = { actions.delete(message) },
             ) {
                 MessageRow(
                     message = message,

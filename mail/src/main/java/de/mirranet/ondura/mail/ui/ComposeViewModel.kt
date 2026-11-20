@@ -87,7 +87,7 @@ class ComposeViewModel(
     private val refId: String?,
     private val preferredAccountId: String?,
     private val request: ComposeRequest?,
-) : AndroidViewModel(application) {
+) : AndroidViewModel(application), ComposeActions {
     private val app = application as OnduraMailApp
     private val core = app.core
     private val _state = MutableStateFlow(ComposeState())
@@ -187,26 +187,26 @@ class ComposeViewModel(
 
     // ------------------------------------------------------------ editing
 
-    fun setAccount(id: String) {
+    override fun setAccount(id: String) {
         dirty = true
         _state.update { it.copy(accountId = id) }
     }
 
-    fun setSubject(v: String) {
+    override fun setSubject(v: String) {
         dirty = true
         _state.update { it.copy(subject = v) }
     }
 
-    fun setBody(v: String) {
+    override fun setBody(v: String) {
         dirty = true
         _state.update { it.copy(body = v) }
     }
 
-    fun showCc() = _state.update { it.copy(showCc = true) }
+    override fun showCc() = _state.update { it.copy(showCc = true) }
 
-    fun toggleImportance() = _state.update { it.copy(highImportance = !it.highImportance) }
+    override fun toggleImportance() = _state.update { it.copy(highImportance = !it.highImportance) }
 
-    fun addRecipient(field: RecipientField, address: Address) {
+    override fun addRecipient(field: RecipientField, address: Address) {
         dirty = true
         _state.update {
             when (field) {
@@ -217,7 +217,7 @@ class ComposeViewModel(
         }
     }
 
-    fun removeRecipient(field: RecipientField, address: Address) {
+    override fun removeRecipient(field: RecipientField, address: Address) {
         dirty = true
         _state.update {
             when (field) {
@@ -228,7 +228,7 @@ class ComposeViewModel(
         }
     }
 
-    fun suggest(query: String) {
+    override fun suggest(query: String) {
         suggestJob?.cancel()
         if (query.trim().length < 2) {
             _state.update { it.copy(suggestions = emptyList()) }
@@ -241,7 +241,7 @@ class ComposeViewModel(
         }
     }
 
-    fun clearSuggestions() = _state.update { it.copy(suggestions = emptyList()) }
+    override fun clearSuggestions() = _state.update { it.copy(suggestions = emptyList()) }
 
     fun addAttachment(uri: Uri) {
         dirty = true
@@ -255,7 +255,7 @@ class ComposeViewModel(
         }
     }
 
-    fun removeAttachment(a: PendingAttachment) {
+    override fun removeAttachment(a: PendingAttachment) {
         dirty = true
         _state.update { it.copy(attachments = it.attachments - a) }
     }
@@ -301,7 +301,7 @@ class ComposeViewModel(
         )
     }
 
-    fun send() {
+    override fun send() {
         val s = _state.value
         if (s.to.isEmpty() && s.cc.isEmpty() && s.bcc.isEmpty()) {
             _state.update { it.copy(error = app.getString(R.string.need_recipient)) }

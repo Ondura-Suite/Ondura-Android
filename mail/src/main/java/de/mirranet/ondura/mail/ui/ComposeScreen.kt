@@ -103,6 +103,43 @@ fun ComposeScreen(
         }
     }
 
+    ComposeContent(
+        mode = mode,
+        state = state,
+        actions = vm,
+        snackbar = snackbar,
+        onClose = close,
+        onPickFiles = { pickFiles.launch(arrayOf("*/*")) },
+    )
+}
+
+/** What the compose screen can ask of its owner ([ComposeViewModel] in the app). */
+interface ComposeActions {
+    fun setAccount(id: String)
+    fun setSubject(v: String)
+    fun setBody(v: String)
+    fun showCc()
+    fun toggleImportance()
+    fun send()
+    fun addRecipient(field: RecipientField, address: Address)
+    fun removeRecipient(field: RecipientField, address: Address)
+    fun suggest(query: String)
+    fun clearSuggestions()
+    fun removeAttachment(a: PendingAttachment)
+}
+
+/** The compose screen without its view model (also used for the screenshots). */
+@Composable
+fun ComposeContent(
+    mode: ComposeMode,
+    state: ComposeState,
+    actions: ComposeActions,
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    onClose: () -> Unit = {},
+    onPickFiles: () -> Unit = {},
+) {
+    val vm = actions
+    val close = onClose
     Scaffold(
         topBar = {
             TopAppBar(
@@ -128,7 +165,7 @@ fun ComposeScreen(
                             tint = if (state.highImportance) OnduraColors.Danger else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    IconButton(onClick = { pickFiles.launch(arrayOf("*/*")) }) {
+                    IconButton(onClick = onPickFiles) {
                         Icon(Icons.Outlined.AttachFile, stringResource(R.string.attach))
                     }
                     if (state.busy) {
@@ -257,7 +294,7 @@ private fun RecipientRow(
     field: RecipientField,
     recipients: List<Address>,
     suggestions: List<Address>,
-    vm: ComposeViewModel,
+    vm: ComposeActions,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     var input by remember { mutableStateOf("") }

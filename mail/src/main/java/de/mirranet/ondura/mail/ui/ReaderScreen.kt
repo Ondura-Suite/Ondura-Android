@@ -76,6 +76,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.mirranet.ondura.core.AttachmentInfo
 import de.mirranet.ondura.core.CoreException
 import de.mirranet.ondura.core.MessageDetail
+import de.mirranet.ondura.core.MessageSummary
 import de.mirranet.ondura.mail.Format
 import de.mirranet.ondura.mail.OnduraMailApp
 import de.mirranet.ondura.mail.R
@@ -155,25 +156,123 @@ fun ReaderScreen(
     val mailState by mail.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
-    var menu by remember { mutableStateOf(false) }
     var moving by remember { mutableStateOf(false) }
     val summary = state.detail?.summary
     // Flag/read state as currently in the list (changes made here show at once).
     val live = summary?.let { s -> mailState.messages.firstOrNull { it.id == s.id } } ?: summary
+
+    ReaderContent(
+        detail = state.detail,
+        error = state.error,
+        live = live,
+        remoteBlocked = state.remoteBlocked,
+        snackbar = snackbar,
+        actions = object : ReaderActions {
+            override fun back() = onBack()
+            override fun reply(id: String) = onReply(id)
+            override fun replyAll(id: String) = onReplyAll(id)
+            override fun forward(id: String) = onForward(id)
+            override fun retry() = vm.load()
+            override fun allowRemote() = vm.allowRemote()
+            override fun archive(message: MessageSummary) {
+                mail.archive(message)
+                onBack()
+            }
+            override fun delete(message: MessageSummary) {
+                mail.delete(message)
+                onBack()
+            }
+            override fun toggleFlag(message: MessageSummary) = mail.setFlagged(message, !message.isFlagged)
+            override fun markUnread(message: MessageSummary) {
+                mail.setRead(message, false)
+                onBack()
+            }
+            override fun move(message: MessageSummary) {
+                moving = true
+            }
+            override fun openAttachment(attachment: AttachmentInfo) {
+                scope.launch {
+                    try {
+                        openFile(context, vm.attachmentFile(attachment), attachment.contentType)
+                    } catch (e: CoreException) {
+                        snackbar.showSnackbar(e.message ?: "")
+                    } catch (e: ActivityNotFoundException) {
+                        snackbar.showSnackbar(context.getString(R.string.no_app_for_file))
+                    }
+                }
+            }
+        },
+    ) {
+        state.detail?.let { detail ->
+            MailWebView(
+                page = state.page,
+                messageId = detail.summary.id,
+                core = vm.core,
+                allowRemote = state.allowRemote,
+                onRemoteBlocked = vm::remoteBlocked,
+                onLink = { uri ->
+                    if (uri.scheme == "mailto") onMailto(uri) else runCatching { context.startActivity(linkIntent(uri)) }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+
+    if (moving && live != null) {
+        FolderPickerDialog(
+            folders = mailState.folders[live.accountId].orEmpty().filter { it.folder.id != live.folderId },
+            onDismiss = { moving = false },
+            onPick = { folder ->
+                moving = false
+                mail.move(live, folder)
+                onBack()
+            },
+        )
+    }
+}
+
+interface ReaderActions {
+    fun back()
+    fun reply(id: String)
+    fun replyAll(id: String)
+    fun forward(id: String)
+    fun retry()
+    fun allowRemote()
+    fun archive(message: MessageSummary)
+    fun delete(message: MessageSummary)
+    fun toggleFlag(message: MessageSummary)
+    fun markUnread(message: MessageSummary)
+    fun move(message: MessageSummary)
+    fun openAttachment(attachment: AttachmentInfo)
+}
+
+/** The message view without its view model; `body` shows the message itself. */
+@Composable
+fun ReaderContent(
+    detail: MessageDetail?,
+    error: String?,
+    live: MessageSummary?,
+    remoteBlocked: Boolean,
+    actions: ReaderActions,
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    body: @Composable () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val summary = detail?.summary
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back)) }
+                    IconButton(onClick = actions::back) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back)) }
                 },
                 actions = {
                     if (live != null) {
-                        IconButton(onClick = { mail.archive(live); onBack() }) {
+                        IconButton(onClick = { actions.archive(live) }) {
                             Icon(Icons.Outlined.Archive, stringResource(R.string.archive_action))
                         }
-                        IconButton(onClick = { mail.delete(live); onBack() }) {
+                        IconButton(onClick = { actions.delete(live) }) {
                             Icon(Icons.Outlined.Delete, stringResource(R.string.delete))
                         }
                         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.more)) }
@@ -181,17 +280,17 @@ fun ReaderScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(if (live.isFlagged) R.string.unflag else R.string.flag)) },
                                 leadingIcon = { Icon(Icons.Outlined.Flag, null) },
-                                onClick = { menu = false; mail.setFlagged(live, !live.isFlagged) },
+                                onClick = { menu = false; actions.toggleFlag(live) },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.mark_unread)) },
                                 leadingIcon = { Icon(Icons.Outlined.MarkEmailUnread, null) },
-                                onClick = { menu = false; mail.setRead(live, false); onBack() },
+                                onClick = { menu = false; actions.markUnread(live) },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.move)) },
                                 leadingIcon = { Icon(Icons.AutoMirrored.Outlined.DriveFileMove, null) },
-                                onClick = { menu = false; moving = true },
+                                onClick = { menu = false; actions.move(live) },
                             )
                         }
                     }
@@ -202,17 +301,17 @@ fun ReaderScreen(
             if (summary != null) {
                 BottomAppBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        TextButton(onClick = { onReply(summary.id) }) {
+                        TextButton(onClick = { actions.reply(summary.id) }) {
                             Icon(Icons.AutoMirrored.Outlined.Reply, null)
                             Spacer(Modifier.width(6.dp))
                             Text(stringResource(R.string.reply))
                         }
-                        TextButton(onClick = { onReplyAll(summary.id) }) {
+                        TextButton(onClick = { actions.replyAll(summary.id) }) {
                             Icon(Icons.AutoMirrored.Outlined.ReplyAll, null)
                             Spacer(Modifier.width(6.dp))
                             Text(stringResource(R.string.reply_all))
                         }
-                        TextButton(onClick = { onForward(summary.id) }) {
+                        TextButton(onClick = { actions.forward(summary.id) }) {
                             Icon(Icons.AutoMirrored.Outlined.Shortcut, null)
                             Spacer(Modifier.width(6.dp))
                             Text(stringResource(R.string.forward))
@@ -223,12 +322,11 @@ fun ReaderScreen(
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        val detail = state.detail
         when {
-            detail == null && state.error != null -> Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
+            detail == null && error != null -> Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.error ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(24.dp))
-                    TextButton(onClick = vm::load) { Text(stringResource(R.string.retry)) }
+                    Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(24.dp))
+                    TextButton(onClick = actions::retry) { Text(stringResource(R.string.retry)) }
                 }
             }
             detail == null -> Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -268,27 +366,21 @@ fun ReaderScreen(
                     FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         files.forEach { a ->
                             AssistChip(
-                                onClick = {
-                                    scope.launch {
-                                        try {
-                                            openFile(context, vm.attachmentFile(a), a.contentType)
-                                        } catch (e: CoreException) {
-                                            snackbar.showSnackbar(e.message ?: "")
-                                        } catch (e: ActivityNotFoundException) {
-                                            snackbar.showSnackbar(context.getString(R.string.no_app_for_file))
-                                        }
-                                    }
-                                },
+                                onClick = { actions.openAttachment(a) },
                                 label = { Text("${a.name} · ${Format.size(a.size)}", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                 leadingIcon = { Icon(Icons.Outlined.AttachFile, null, Modifier.size(18.dp)) },
                             )
                         }
                     }
                 }
-                if (state.remoteBlocked) {
+                if (remoteBlocked) {
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { vm.allowRemote() },
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = actions::allowRemote),
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.Image, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -299,32 +391,10 @@ fun ReaderScreen(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                MailWebView(
-                    page = state.page,
-                    messageId = s.id,
-                    core = vm.core,
-                    allowRemote = state.allowRemote,
-                    onRemoteBlocked = vm::remoteBlocked,
-                    onLink = { uri ->
-                        if (uri.scheme == "mailto") onMailto(uri) else runCatching { context.startActivity(linkIntent(uri)) }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                body()
                 Spacer(Modifier.height(24.dp))
             }
         }
-    }
-
-    if (moving && live != null) {
-        FolderPickerDialog(
-            folders = mailState.folders[live.accountId].orEmpty().filter { it.folder.id != live.folderId },
-            onDismiss = { moving = false },
-            onPick = { folder ->
-                moving = false
-                mail.move(live, folder)
-                onBack()
-            },
-        )
     }
 }
 

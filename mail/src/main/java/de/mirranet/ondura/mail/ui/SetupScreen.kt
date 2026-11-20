@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -276,13 +277,32 @@ fun SetupScreen(canGoBack: Boolean, onBack: () -> Unit, onDone: () -> Unit) {
     LaunchedEffect(state.done) { if (state.done) onDone() }
     BackHandler(enabled = state.kind != SetupKind.CHOOSE || state.busy) { vm.back() }
 
+    SetupLayout(
+        showBack = canGoBack || state.kind != SetupKind.CHOOSE,
+        onBack = { if (!vm.back()) onBack() },
+    ) {
+        when (state.kind) {
+            SetupKind.CHOOSE -> Choose(vm::choose)
+            SetupKind.MICROSOFT -> Microsoft(state, vm)
+            SetupKind.EXCHANGE -> Exchange(state, vm)
+            SetupKind.IMAP -> Imap(state, vm)
+        }
+        state.error?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
+        state.certificate?.let { cert -> CertificateCard(cert, onTrust = vm::trustCertificate) }
+    }
+}
+
+@Composable
+private fun SetupLayout(showBack: Boolean, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    if (canGoBack || state.kind != SetupKind.CHOOSE) {
-                        IconButton(onClick = { if (!vm.back()) onBack() }) {
+                    if (showBack) {
+                        IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back))
                         }
                     }
@@ -299,19 +319,16 @@ fun SetupScreen(canGoBack: Boolean, onBack: () -> Unit, onDone: () -> Unit) {
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            when (state.kind) {
-                SetupKind.CHOOSE -> Choose(vm)
-                SetupKind.MICROSOFT -> Microsoft(state, vm)
-                SetupKind.EXCHANGE -> Exchange(state, vm)
-                SetupKind.IMAP -> Imap(state, vm)
-            }
-            state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-            }
-            state.certificate?.let { cert -> CertificateCard(cert, onTrust = vm::trustCertificate) }
+            content()
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/** First step of the account setup (also used for the screenshots). */
+@Composable
+fun SetupWelcome(onChoose: (SetupKind) -> Unit = {}) {
+    SetupLayout(showBack = false, onBack = {}) { Choose(onChoose) }
 }
 
 @Composable
@@ -327,16 +344,16 @@ private fun Header(title: String, subtitle: String) {
 }
 
 @Composable
-private fun Choose(vm: SetupViewModel) {
+private fun Choose(onChoose: (SetupKind) -> Unit) {
     Header(stringResource(R.string.setup_welcome), stringResource(R.string.setup_choose))
     ChoiceCard(Icons.Outlined.Window, stringResource(R.string.setup_microsoft), stringResource(R.string.setup_microsoft_hint)) {
-        vm.choose(SetupKind.MICROSOFT)
+        onChoose(SetupKind.MICROSOFT)
     }
     ChoiceCard(Icons.Outlined.Business, stringResource(R.string.setup_exchange), stringResource(R.string.setup_exchange_hint)) {
-        vm.choose(SetupKind.EXCHANGE)
+        onChoose(SetupKind.EXCHANGE)
     }
     ChoiceCard(Icons.Outlined.Email, stringResource(R.string.setup_imap), stringResource(R.string.setup_imap_hint)) {
-        vm.choose(SetupKind.IMAP)
+        onChoose(SetupKind.IMAP)
     }
 }
 

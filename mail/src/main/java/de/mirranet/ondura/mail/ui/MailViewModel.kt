@@ -61,7 +61,7 @@ data class MailState(
  * State of the main screen (accounts, folders, message list), shared by the
  * screens of the activity so the list is still there when coming back.
  */
-class MailViewModel(application: Application) : AndroidViewModel(application) {
+class MailViewModel(application: Application) : AndroidViewModel(application), InboxActions {
     private val app = application as OnduraMailApp
     private val core = app.core
 
@@ -163,7 +163,7 @@ class MailViewModel(application: Application) : AndroidViewModel(application) {
         select(MailView.InFolder(accountId, inbox?.id ?: ""))
     }
 
-    fun select(view: MailView) {
+    override fun select(view: MailView) {
         val split = view is MailView.InFolder && app.settings.value.focusedInbox &&
             _state.value.folder(view.folderId)?.role == FolderRole.INBOX
         _state.update {
@@ -175,7 +175,7 @@ class MailViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun selectTab(focused: Boolean) {
+    override fun selectTab(focused: Boolean) {
         _state.update { it.copy(focusedTab = focused, messages = emptyList(), endReached = false) }
         viewModelScope.launch { reloadMessages() }
     }
@@ -202,7 +202,7 @@ class MailViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Next page from the store, or older messages from the server. */
-    fun loadMore() {
+    override fun loadMore() {
         val s = _state.value
         val view = s.view as? MailView.InFolder ?: return
         if (s.loadingMore || s.endReached || view.folderId.isEmpty()) return
@@ -229,7 +229,7 @@ class MailViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun refresh() {
+    override fun refresh() {
         when (val view = _state.value.view) {
             is MailView.InFolder -> {
                 _state.update { it.copy(refreshing = true) }
@@ -294,7 +294,7 @@ class MailViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun delete(message: MessageSummary) {
+    override fun delete(message: MessageSummary) {
         drop(message.id)
         act {
             core.delete(message.id)
@@ -302,7 +302,7 @@ class MailViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun archive(message: MessageSummary) {
+    override fun archive(message: MessageSummary) {
         drop(message.id)
         act {
             core.archive(message.id)
