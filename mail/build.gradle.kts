@@ -65,6 +65,7 @@ android {
     testOptions {
         // Screenshot tests (Robolectric) need the app's resources.
         unitTests.isIncludeAndroidResources = true
+        unitTests.all { it.systemProperty("robolectric.pixelCopyRenderMode", "hardware") }
     }
 
     packaging {
