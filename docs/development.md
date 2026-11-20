@@ -97,6 +97,18 @@ the agent and `ANDROID_HOME` set. The keystore comes from the credentials
 (secret text); without them the build uses debug signing. The client id is a
 build parameter.
 
+## Screenshots
+
+`docs/screenshots` is rendered from the real Compose screens with sample data
+(`mail/src/test/.../Screenshots.kt`, Robolectric):
+
+```sh
+./gradlew :mail:testDebugUnitTest --tests '*Screenshots*'   # → mail/build/screenshots
+```
+
+CI renders them on every build and uploads them as the `screenshots` artifact.
+The images in the repository are scaled to 600 px width.
+
 ## Translations
 
 Edit the table in `scripts/strings.py` and run `python3 scripts/strings.py`.

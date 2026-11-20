@@ -1,7 +1,22 @@
-# Ondura for Android
+<p align="center">
+  <img src="docs/images/ondura.svg" alt="Ondura" width="120">
+</p>
 
-Ondura Mail for Android – your Microsoft 365, Exchange and IMAP mailboxes in one
-app, with the same engine as Ondura on the desktop.
+<h1 align="center">Ondura for Android</h1>
+
+<p align="center">
+  <img src="docs/images/mail.svg" alt="Ondura Mail" width="56">
+</p>
+
+<p align="center"><b>Ondura Mail</b> – Microsoft 365, Exchange and IMAP in one app, with the same engine as Ondura on the desktop</p>
+
+<p align="center"><a href="https://ondura.mirranet.de">ondura.mirranet.de</a></p>
+
+<p align="center">
+  <img src="docs/screenshots/inbox.png" alt="Inbox" width="240">&nbsp;
+  <img src="docs/screenshots/message.png" alt="Reading a message" width="240">&nbsp;
+  <img src="docs/screenshots/compose.png" alt="Writing a reply" width="240">
+</p>
 
 Ondura Mail on the phone is not a separate product with its own quirks: the
 mail engine, the local store and the connections to Microsoft 365, Exchange
@@ -24,6 +39,12 @@ is native Android.
   passwords are kept in the Android Keystore and never leave the device
 - **Notifications** for new mail, also when the app is closed
 - German, English and French
+
+<p align="center">
+  <img src="docs/screenshots/folders.png" alt="Accounts and folders" width="240">&nbsp;
+  <img src="docs/screenshots/inbox-dark.png" alt="Dark theme" width="240">&nbsp;
+  <img src="docs/screenshots/setup.png" alt="Adding an account" width="240">
+</p>
 
 Calendar, contacts and tasks are next – inside Ondura Mail, like on the
 desktop.

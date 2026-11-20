@@ -85,15 +85,7 @@ jobs:
           ./gradlew --no-daemon :mail:assembleRelease -Pondura.versionName=${{ steps.version.outputs.name }}
 
       - name: Screenshots
-        run: |
-          ./gradlew --no-daemon :mail:testDebugUnitTest --tests '*Screenshots*'
-          for f in mail/build/screenshots/*.png; do
-            echo "::group::$(basename "$f")"
-            echo "SHOT-BEGIN $(basename "$f")"
-            base64 -w0 "$f"; echo
-            echo "SHOT-END"
-            echo "::endgroup::"
-          done
+        run: ./gradlew --no-daemon :mail:testDebugUnitTest --tests '*Screenshots*'
 
       - uses: actions/upload-artifact@v4
         with:
