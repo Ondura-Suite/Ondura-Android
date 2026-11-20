@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+members = ["ondura-mobile", "uniffi-bindgen"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+authors = ["Niklas Linz <niklas.linz@mirranet.de>"]
+license = "GPL-3.0-or-later"
+homepage = "https://ondura.mirranet.de"
+repository = "https://github.com/Ondura-Suite/Ondura-Android"
+
+[workspace.dependencies]
+uniffi = "0.32"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+# Keep the symbol table: uniffi-bindgen reads the interface metadata from it.
+# Debug info is still dropped, and the Android build strips the packaged libs.
+opt-level = "s"
+strip = "debuginfo"

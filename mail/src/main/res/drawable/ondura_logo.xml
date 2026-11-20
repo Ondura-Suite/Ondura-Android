@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ondura Mail logo (apps/ondura/public/mail.svg of Ondura-Core). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path android:pathData="M18,4h28a14,14 0 0 1 14,14v28a14,14 0 0 1 -14,14h-28a14,14 0 0 1 -14,-14v-28a14,14 0 0 1 14,-14z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="32"
+                android:startY="4"
+                android:endX="32"
+                android:endY="60">
+                <item android:offset="0" android:color="#FF5A75E1" />
+                <item android:offset="1" android:color="#FF304BB4" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M16.5,18h31a4.5,4.5 0 0 1 4.5,4.5v19a4.5,4.5 0 0 1 -4.5,4.5h-31a4.5,4.5 0 0 1 -4.5,-4.5v-19a4.5,4.5 0 0 1 4.5,-4.5z" />
+    <path android:strokeColor="#FF3654C9" android:strokeWidth="2.8" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M13.5,21.5L32,34.5L50.5,21.5" />
+    <path android:strokeColor="#4D3654C9" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M14.5,44L26.5,30.5M49.5,44L37.5,30.5" />
+</vector>
