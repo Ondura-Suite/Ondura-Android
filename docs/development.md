@@ -84,8 +84,14 @@ keytool -genkeypair -v -keystore ondura.jks -alias ondura -keyalg RSA -keysize 4
 ## Continuous integration
 
 **GitHub Actions** (`.github/workflows/build.yml`) builds the release APK on
-every push and attaches it to a GitHub release for tags `v*` (the tag sets the
-version name). Repository or organisation settings:
+every push to `main` and uploads it as an artifact; it doesn't publish
+anything by itself.
+
+**Releases** are made by hand: *Actions › Release › Run workflow*, optionally
+with a version `X.Y.Z` (empty: the current version if it isn't released yet,
+else the next patch version). The workflow writes the version to
+`gradle.properties`, commits and tags `vX.Y.Z` on `main`, then starts the
+build for the tag, which publishes the GitHub release with the signed APK. Repository or organisation settings:
 
 - variable `ONDURA_GRAPH_CLIENT_ID`
 - secrets `ANDROID_KEYSTORE_BASE64` (`base64 -w0 ondura.jks`),
